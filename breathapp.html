@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guided Breathing</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(to left top, #a9adb0, #46a2c7, #4a68bd);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-family: 'Roboto', sans-serif;
+      text-align: center;
+      color: #fff;
+      font-size: 40px;
+      margin-top: 30px;
+    }
+
+    .circle-container {
+      position: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 2rem;
+      margin-bottom: 2.1rem;
+      justify-content: center;
+      height: 40vh;
+      width: 65%;
+      max-width: 800px;
+    }
+
+    .circle {
+      width: 50px;
+      height: 50px;
+      background-color: blue;
+      border-radius: 50%;
+      transition: width 6s ease-in-out, height 6s ease-in-out;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .stopwatch {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 20px;
+    }
+
+    .secondstopwatch {
+      margin-top: 20px;
+      color: white;
+      font-size: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .btn {
+      margin-top: 30px;
+      width: 30%;
+      height: 10%;
+    }
+
+    .reset-btn {
+      margin-top: 10px;
+      width: 100px;
+      height: 10%;
+    }
+
+    @keyframes breathe {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(2);
+      }
+    }
+
+    @keyframes changeColor {
+      0% {
+        background-color: rgb(110, 250, 16);
+      }
+      20% {
+        background-color: rgb(40, 179, 225);
+      }
+      40% {
+        background-color: rgb(64, 42, 208);
+      }
+      60% {
+        background-color: violet;
+      }
+      80% {
+        background-color: rgb(215, 215, 17);
+      }
+      100% {
+        background-color: rgb(22, 176, 203);
+      }
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 600px) {
+      .circle-container {
+        margin-top: 2rem;
+      }
+      .breath-dot {
+        width: 50px;
+        height: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Guided Breathing Mini Sessions</h1>
+  <button id="sessionButton" class="btn btn-success" onclick="toggleSession()">Start</button>
+  
+  <div class="circle-container container">
+    <div class="circle" id="expandingCircle"></div>
+    <div class="stopwatch" id="stopwatch">0</div>
+   
+  </div>
+  <div>
+    <div class="secondstopwatch" id="secondstopwatch">00:00:00</div>
+    <div class="secondstopwatch" id="elapsedtime">00:00:00</div>
+   
+  </div>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    let isRunning = false;
+    let intervalId;
+    let secondStopwatchIntervalId;
+    let totalElapsedTime = 0;
+    let sessionStartTime = 0; // Variable to store the start time of the current session
+    let totalSessionTime = 0; // Variable to store the total time of all sessions
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const expandingCircle = document.getElementById('expandingCircle');
+      const stopwatch = document.getElementById('stopwatch');
+      const secondStopwatch = document.getElementById('secondstopwatch');
+      const elapsedTimeElement = document.getElementById('elapsedtime');
+
+      function expandCircle() {
+        expandingCircle.style.width = '200px';
+        expandingCircle.style.height = '200px';
+      }
+
+      function shrinkCircle() {
+        expandingCircle.style.width = '50px';
+        expandingCircle.style.height = '50px';
+      }
+
+      function updateStopwatch(time) {
+        stopwatch.innerText = time;
+      }
+
+      function updateSecondStopwatch() {
+        let totalSeconds = Math.floor(totalElapsedTime / 1000);
+        let hours = Math.floor(totalSeconds / 3600);
+        let minutes = Math.floor((totalSeconds % 3600) / 60);
+        let seconds = totalSeconds % 60;
+
+        hours = hours < 10 ? "0" + hours : hours;
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        secondStopwatch.innerText = `${hours}:${minutes}:${seconds}`;
+      }
+
+      function animateCircle() {
+        let currentTime = 0;
+
+        intervalId = setInterval(() => {
+          if (currentTime <= 6) {
+            updateStopwatch(currentTime);
+            expandCircle();
+          } else {
+            updateStopwatch(12 - currentTime);
+            shrinkCircle();
+          }
+
+          if (currentTime === 12) {
+            currentTime = 0;
+          }
+
+          currentTime++;
+        }, 1000);
+
+        secondStopwatchIntervalId = setInterval(() => {
+          if (isRunning) {
+            totalElapsedTime += 1000;
+            updateSecondStopwatch();
+          }
+        }, 1000);
+      }
+
+      function toggleSession() {
+        const button = document.getElementById('sessionButton');
+
+        if (!isRunning) {
+          button.textContent = 'Stop';
+          isRunning = true;
+          sessionStartTime = Date.now(); // Store the start time when the session begins
+          animateCircle();
+        } else {
+          button.textContent = 'Start';
+          isRunning = false;
+          clearInterval(intervalId);
+          clearInterval(secondStopwatchIntervalId);
+          expandingCircle.style.width = '50px'; // Reset the circle to initial size
+          expandingCircle.style.height = '50px';
+          updateStopwatch(0); // Reset the stopwatch
+          totalSessionTime += Date.now() - sessionStartTime; // Update the total session time
+          displayTotalSessionTime(); // Display the total session time
+          resetSecondStopwatch(); // Reset the second stopwatch
+        }
+      }
+
+      function displayTotalSessionTime() {
+        let totalSeconds = Math.floor(totalSessionTime / 1000);
+        let hours = Math.floor(totalSeconds / 3600);
+        let minutes = Math.floor((totalSeconds % 3600) / 60);
+        let seconds = totalSeconds % 60;
+
+        hours = hours < 10 ? "0" + hours : hours;
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        elapsedTimeElement.innerText = `${hours}:${minutes}:${seconds}`;
+      }
+
+      function resetSecondStopwatch() {
+        totalElapsedTime = 0;
+        updateSecondStopwatch();
+      }
+
+      document.getElementById('sessionButton').addEventListener('click', toggleSession);
+    });
+</script>
+
+
+
+ 
+</body>
+</html>
